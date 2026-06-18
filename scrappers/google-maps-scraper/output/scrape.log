@@ -1,0 +1,71 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ 🌍 Google Maps Scraper                                                       ║
+║ ⭐ If you find this project useful, please star it on GitHub: https://github ║
+║ .com/gosom/google-maps-scraper                                               ║
+║ 💖 Consider sponsoring to support development: https://github.com/sponsors/g ║
+║ osom                                                                         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+2026/06/19 01:07:39 INFO Downloading browsers...
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+Downloading Chromium 143.0.7499.4 (playwright build v1200)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1200/chromium-linux.zip[22m
+(node:14697) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+|                                                                                |   0% of 164.7 MiB
+|■■■■■■■■                                                                        |  10% of 164.7 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 164.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 164.7 MiB
+Chromium 143.0.7499.4 (playwright build v1200) downloaded to /home/muhammad/.cache/ms-playwright/chromium-1200
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+Downloading Chromium Headless Shell 143.0.7499.4 (playwright build v1200)[2m from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1200/chromium-headless-shell-linux.zip[22m
+(node:14780) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+|                                                                                |   0% of 109.7 MiB
+|■■■■■■■■                                                                        |  10% of 109.7 MiB
+|■■■■■■■■■■■■■■■■                                                                |  20% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 109.7 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 109.7 MiB
+Chromium Headless Shell 143.0.7499.4 (playwright build v1200) downloaded to /home/muhammad/.cache/ms-playwright/chromium_headless_shell-1200
+2026/06/19 01:08:03 INFO Downloaded browsers successfully
+{"level":"info","component":"scrapemate","time":"2026-06-18T18:08:03.587895385Z","message":"starting scrapemate"}
+{"level":"info","component":"scrapemate","jobid":"7b544855-ea00-43e7-bd25-e04c90f0d78d","time":"2026-06-18T18:08:07.389148033Z","message":"12 places found"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 7b544855-ea00-43e7-bd25-e04c90f0d78d, Method: GET, URL: https://www.google.com/maps/search/kpop+market+in+Bandung%2C+Indonesia, UrlParams: map[hl:en]}","status":"success","duration":3800.074717,"time":"2026-06-18T18:08:07.389249518Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 2c81b701-78bc-4e89-9818-c734254dae3d, Method: GET, URL: https://www.google.com/maps/place/ID+Kpop+Store/data=!4m7!3m6!1s0x2e68e39e1bc7c623:0x8c3ad7a32b3a03e2!8m2!3d-6.8480099!4d107.5187915!16s%2Fg%2F11v5t3v7j_!19sChIJI8bHG57jaC4R4gM6K6PXOow?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":640.417359,"time":"2026-06-18T18:08:08.02973052Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 6d499066-1955-41a7-9443-e61305965835, Method: GET, URL: https://www.google.com/maps/place/Original+Kpop/data=!4m7!3m6!1s0x2e68e6453e363e21:0x43f3551b4913fce4!8m2!3d-6.898677!4d107.6079899!16s%2Fg%2F11g6s81lyx!19sChIJIT42PkXmaC4R5PwTSRtV80M?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":619.175813,"time":"2026-06-18T18:08:08.649013972Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 1b41dc2f-6143-456e-8277-9b2e609fc101, Method: GET, URL: https://www.google.com/maps/place/K-POP+FAN+STORE/data=!4m7!3m6!1s0x2e68e9f773f3b09d:0x3726eac5fb20c3e1!8m2!3d-6.9278004!4d107.6272356!16s%2Fg%2F11pcnbckbp!19sChIJnbDzc_fpaC4R4cMg-8XqJjc?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":1916.256227,"time":"2026-06-18T18:08:10.565365204Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 2b7c755e-b50c-4129-9fb5-279b17803eb7, Method: GET, URL: https://www.google.com/maps/place/Fan+Stuff+Shop+%28Kpop+Store%29/data=!4m7!3m6!1s0x2e68e6455d5c7133:0x74cfe357d6ace51!8m2!3d-6.8988135!4d107.6087699!16s%2Fg%2F11c0xwtgfy!19sChIJM3FcXUXmaC4RUc5qfTX-TAc?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":657.777026,"time":"2026-06-18T18:08:11.223256139Z","message":"job finished"}
+{"level":"info","component":"scrapemate","jobid":"ef3cdd1d-5f15-433b-abea-5b61012cd549","url":"https://instagram.com/kpopfanstore.id","time":"2026-06-18T18:08:16.059577457Z","message":"Processing email job"}
+{"level":"info","component":"scrapemate","job":"Job{ID: ef3cdd1d-5f15-433b-abea-5b61012cd549, Method: GET, URL: https://instagram.com/kpopfanstore.id, UrlParams: map[]}","status":"success","duration":4859.377715,"time":"2026-06-18T18:08:16.082703147Z","message":"job finished"}
+{"level":"info","component":"scrapemate","jobid":"65ca85f1-e7f9-4e9c-8b47-00eaa0e23554","url":"http://instagram.com/fanstuffshop","time":"2026-06-18T18:08:19.732495046Z","message":"Processing email job"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 65ca85f1-e7f9-4e9c-8b47-00eaa0e23554, Method: GET, URL: http://instagram.com/fanstuffshop, UrlParams: map[]}","status":"success","duration":3672.547639,"time":"2026-06-18T18:08:19.755316654Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 8dfe7b18-4ea1-432f-99d4-be4ea125f453, Method: GET, URL: https://www.google.com/maps/place/Lafrere+kpop+store+Bandung+%28+kings+bandung+lt3%29/data=!4m7!3m6!1s0x2e68e756ba87553f:0xcce165910b6d40dd!8m2!3d-6.9231144!4d107.6050039!16s%2Fg%2F11jyh8_5dw!19sChIJP1WHulbnaC4R3UBtC5Fl4cw?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":579.706164,"time":"2026-06-18T18:08:20.335072281Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 05dba336-3adb-43eb-95d7-1a31faaae8dd, Method: GET, URL: https://www.google.com/maps/place/KPOP+Warehouse/data=!4m7!3m6!1s0x2e68e9ec35cfecc5:0x1339d748b1acc107!8m2!3d-6.9436735!4d107.5750425!16s%2Fg%2F11n2f8kklr!19sChIJxezPNezpaC4RB8GssUjXORM?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":639.753259,"time":"2026-06-18T18:08:20.974881112Z","message":"job finished"}
+{"level":"info","component":"scrapemate","jobid":"5234846e-ba37-456d-9233-b9ddef35a77f","url":"https://shopee.co.id/lafrere.id","time":"2026-06-18T18:08:24.657994882Z","message":"Processing email job"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 5234846e-ba37-456d-9233-b9ddef35a77f, Method: GET, URL: https://shopee.co.id/lafrere.id, UrlParams: map[]}","status":"success","duration":3691.536891,"time":"2026-06-18T18:08:24.66649841Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 2f0dde10-86c9-454b-83ca-68b4d5786922, Method: GET, URL: https://www.google.com/maps/place/Room+23+Merch+Store/data=!4m7!3m6!1s0x2e68e7ba76298393:0x2e8b07cada87993e!8m2!3d-6.9132685!4d107.6281793!16s%2Fg%2F11kp9z2ztm!19sChIJk4MpdrrnaC4RPpmH2soHiy4?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":640.014028,"time":"2026-06-18T18:08:25.306574Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 57a64efe-97a7-45b7-88e0-fe14f12990b1, Method: GET, URL: https://www.google.com/maps/place/Toko+Album+Kpop+Chagi_id/data=!4m7!3m6!1s0x2e68e74c90170185:0x7866fb9e04d0f7d2!8m2!3d-6.9049608!4d107.6446095!16s%2Fg%2F11t819gsq7!19sChIJhQEXkEznaC4R0vfQBJ77Zng?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":643.45266,"time":"2026-06-18T18:08:25.950094706Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 441ec018-8838-44b6-b128-43c8d556a1d8, Method: GET, URL: https://www.google.com/maps/place/SUNSUN+KPOP+WORLD/data=!4m7!3m6!1s0x2e68e9d291abd519:0x665a751c6cccfa9c!8m2!3d-6.9640356!4d107.661223!16s%2Fg%2F11h1448_67!19sChIJGdWrkdLpaC4RnPrMbBx1WmY?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":654.735503,"time":"2026-06-18T18:08:26.6048927Z","message":"job finished"}
+{"level":"info","component":"scrapemate","jobid":"33738ff8-212b-46ea-8049-bfd5a81f033c","url":"https://shopee.co.id/ghinnada","time":"2026-06-18T18:08:29.896133089Z","message":"Processing email job"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 33738ff8-212b-46ea-8049-bfd5a81f033c, Method: GET, URL: https://shopee.co.id/ghinnada, UrlParams: map[]}","status":"success","duration":3299.86181,"time":"2026-06-18T18:08:29.904815786Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: dfbb710b-05c4-43d2-b50c-0b9d52da49b2, Method: GET, URL: https://www.google.com/maps/place/Daebak+Kpop+Shop+%2F+Kiminara/data=!4m7!3m6!1s0x2e68ef0be547afbd:0xbd2d1bf5db560361!8m2!3d-7.000312!4d107.6036269!16s%2Fg%2F11wqfj2tyn!19sChIJva9H5QvvaC4RYQNW2_UbLb0?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":598.944251,"time":"2026-06-18T18:08:30.503805721Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 4b6925a1-889c-4721-9208-753116350886, Method: GET, URL: https://www.google.com/maps/place/Kpop+Stars/data=!4m7!3m6!1s0x2e68e8a7e8d11a6f:0x7e9cad4861bf758e!8m2!3d-6.9300786!4d107.5869152!16s%2Fg%2F11b61qv_gj!19sChIJbxrR6KfoaC4RjnW_YUitnH4?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":642.007433,"time":"2026-06-18T18:08:31.145874903Z","message":"job finished"}
+{"level":"info","component":"scrapemate","jobid":"926f855f-d710-4b2c-b5e7-1f2ca27987b9","url":"http://shopee.co.id/daebakkpopshop","time":"2026-06-18T18:08:34.386517412Z","message":"Processing email job"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 926f855f-d710-4b2c-b5e7-1f2ca27987b9, Method: GET, URL: http://shopee.co.id/daebakkpopshop, UrlParams: map[]}","status":"success","duration":3248.724981,"time":"2026-06-18T18:08:34.394660771Z","message":"job finished"}
+{"level":"info","component":"scrapemate","job":"Job{ID: 71d472d5-4ef6-4f75-8a93-84c2760d3645, Method: GET, URL: https://www.google.com/maps/place/Kimso/data=!4m7!3m6!1s0x2e68e637ebbaace9:0xca304103c007758b!8m2!3d-6.9230975!4d107.6050182!16s%2Fg%2F11df3ltsv5!19sChIJ6ay66zfmaC4Ri3UHwANBMMo?authuser=0&hl=en&rclk=1, UrlParams: map[hl:en]}","status":"success","duration":644.954334,"time":"2026-06-18T18:08:35.03967867Z","message":"job finished"}
+{"level":"info","component":"scrapemate","time":"2026-06-18T18:08:35.039995412Z","message":"scrapemate exited"}
+{"level":"info","component":"scrapemate","time":"2026-06-18T18:08:46.589594122Z","message":"received signal, shutting down"}
+2026/06/19 01:08:46 Received signal, shutting down...
