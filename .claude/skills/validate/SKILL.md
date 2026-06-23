@@ -1,6 +1,6 @@
 ---
 name: validate
-description: Validate scraped business leads from the OpenCraft Supabase database. FIRST refreshes OpenCraft's brand knowledge graph from the public showcase (https://ocraft.id/en/showcase), THEN pulls pending leads from the `scraper_leads` table via the Supabase MCP, verifies each business with the Claude-in-Chrome browser extension (is the website live? is the business real and active? what market is it in?), and writes back a validation status, a marketing angle, and a ready-to-send cold message IN BAHASA INDONESIA that proposes the most relevant OpenCraft showcase project (e.g. a Korean-market lead is pitched Kiyoo, a skincare brand is pitched VERDA). Use when the user types /validate, optionally with a category, location, or count, e.g. "/validate", "/validate korean-market in Jakarta", "/validate 10 pending leads", "/validate otomotif".
+description: Validate scraped business leads from the OpenCraft Supabase database. FIRST refreshes OpenCraft's brand knowledge graph from the public showcase (https://ocraft.id/en/showcase), THEN pulls pending leads from the `scraper_leads` table via the Supabase MCP, verifies each business with the Claude-in-Chrome browser extension (is the website live? is the business real and active? what market is it in?), and writes back a validation status, a marketing angle, and a ready-to-send cold message IN BAHASA INDONESIA that SENDS THE ACTIVE LIVE LINK of the most relevant OpenCraft showcase project (e.g. a Korean-market lead gets Kiyoo's live link, a skincare brand gets VERDA's live link) so the prospect can click and see a real example. Use when the user types /validate, optionally with a category, location, or count, e.g. "/validate", "/validate korean-market in Jakarta", "/validate 10 pending leads", "/validate otomotif".
 ---
 
 # /validate — refresh brand knowledge → verify leads → showcase-driven outreach
@@ -9,13 +9,13 @@ The flow, in order:
 
 1. **Brand knowledge first.** Pull OpenCraft's live showcase from `https://ocraft.id/en/showcase` and refresh the **brand knowledge graph** (Supabase `brand_knowledge_nodes` / `brand_knowledge_edges`, brand `opencraft`) so the showcase projects + the markets they serve are current and loaded into context.
 2. **Then analyse the lead's website** with the Claude-in-Chrome extension — confirm it's a real, active business and detect **which market/segment** it's in.
-3. **Then write the cold message** so the pitch is grounded in a real OpenCraft showcase project that matches the lead's market — e.g. a **Korean / K-pop** lead is pitched **Kiyoo** (kiyoo.id), a **skincare / kecantikan** brand is pitched **VERDA** (verda.id).
+3. **Then write the cold message** so the pitch is grounded in a real OpenCraft showcase project that matches the lead's market, and **send the project's active live link** so the prospect can click straight through to a real example — e.g. a **Korean / K-pop** lead gets **Kiyoo**'s live link, a **skincare / kecantikan** brand gets **VERDA**'s live link.
 
 Source leads come from the project `/scrape` pushed into Supabase (`central-apps`, ref **`wdzmuniyqqyngzckeoph`**, table `scraper_leads`). Each validated row is enriched with:
 
 - `validation_status` — `valid` / `invalid` / `needs_review` (was `pending`)
 - `marketing_angle` — **the marketing field**: the tailored selling angle, anchored to the matched showcase project
-- `outreach_message` — a ready-to-send cold message **in Bahasa Indonesia**, personalised per business and proposing the matched showcase project
+- `outreach_message` — a ready-to-send cold message **in Bahasa Indonesia**, personalised per business, that **includes the active live link of the matched showcase project** (a clickable `https://…` URL) so the prospect can open a real example
 
 These columns already exist on `scraper_leads` (added by migration `add_validation_and_marketing_columns_to_scraper_leads`): `validation_status` (default `pending`), `validation_notes`, `outreach_message`, `marketing_angle`, `validated_at`.
 
@@ -23,7 +23,7 @@ These columns already exist on `scraper_leads` (added by migration `add_validati
 
 Before touching any lead, make sure the brand knowledge graph reflects the current showcase. This is what lets the cold message propose a *real* OpenCraft project instead of a generic pitch.
 
-1. **Fetch the showcase.** Read `https://ocraft.id/en/showcase` (WebFetch). For every project listed, extract: project **name**, what it is (1-line), its **live URL**, the **market/segment** it serves, and the **deliverables** (what OpenCraft built).
+1. **Fetch the showcase.** Read `https://ocraft.id/en/showcase` (WebFetch). For every project listed, extract: project **name**, what it is (1-line), its **live URL**, the **market/segment** it serves, and the **deliverables** (what OpenCraft built). Capture the **exact live URL the showcase links to** — this is the link the cold message will send, so use the real working URL (it may be a `*.vercel.app` deploy rather than a custom domain). **Verify each live URL is actually reachable** before storing it: `navigate` to it in the `PC Gaming Raka` browser (or WebFetch it) and confirm it loads a real page (not 404/parked/expired). If a project's live link is dead, mark it so and **do not** send that link in any message — fall back to a relevant service pitch instead. Only links confirmed active in this step may be put into an `outreach_message`.
 2. **Upsert into the brand knowledge graph** in Supabase (`mcp__supabase__execute_sql`, `project_id: "wdzmuniyqqyngzckeoph"`, brand_slug `opencraft`). Each showcase project is a `studi_kasus` node; the market it serves is a `pasar` node; link them with a `melayani_pasar` edge. There is **no unique constraint** on `(brand_slug, label)`, so guard every insert with `where not exists (...)` to stay idempotent (re-running must not duplicate). Store the live URL + segment in `props`:
 
    ```sql
@@ -33,10 +33,11 @@ Before touching any lead, make sure the brand knowledge graph reflects the curre
    where not exists (select 1 from brand_knowledge_nodes
                      where brand_slug='opencraft' and label='<Market label>');
 
-   -- case-study node
+   -- case-study node — live_url must be the EXACT active link verified reachable in step 1;
+   -- link_active records whether that link loaded (only active links go into outreach messages)
    insert into brand_knowledge_nodes (brand_slug, type, label, description, props)
    select 'opencraft','studi_kasus','<Project> — <one-liner>','<desc>',
-     '{"live_url":"https://...","segment":"<slug>","propose_for":["<slug>"],"deliverables":["..."]}'::jsonb
+     '{"live_url":"https://...","link_active":true,"segment":"<slug>","propose_for":["<slug>"],"deliverables":["..."]}'::jsonb
    where not exists (select 1 from brand_knowledge_nodes
                      where brand_slug='opencraft' and label='<Project> — <one-liner>');
 
@@ -51,18 +52,28 @@ Before touching any lead, make sure the brand knowledge graph reflects the curre
                        and x.target_id=t.id and x.relation='melayani_pasar');
    ```
 
-   Map the showcase segment to one of the 6 scrape buckets where it fits (`kecantikan`, `wisata`, `otomotif`, `akomodasi`, `kesehatan`, `korean-market`) so it lines up with how leads are categorised. As of last refresh the showcase contained: **Kiyoo** (kiyoo.id — pre-order website for K-pop merch → `korean-market`) and **VERDA** (verda.id — D2C skincare landing page → `kecantikan`). Add any new projects you find; don't assume this list is complete.
+   Map the showcase segment to one of the 6 scrape buckets where it fits (`kecantikan`, `wisata`, `otomotif`, `akomodasi`, `kesehatan`, `korean-market`) so it lines up with how leads are categorised. As of last refresh the showcase contained: **Kiyoo** (kiyoo.id — pre-order website for K-pop merch → `korean-market`), **VERDA** (D2C skincare landing page → `kecantikan`) and **VELOCE Motors** (automotive-landing.vercel.app — performance-auto landing page → `otomotif`). Add any new projects you find; don't assume this list is complete.
+
+   **Reconcile the live link on existing nodes.** Because the inserts are guarded with `where not exists`, a project already in the graph keeps its old `props` — so its stored `live_url` can drift from the link the showcase currently points to (e.g. a custom domain in the graph vs. a `*.vercel.app` link on the showcase). After the inserts, for every showcase project **update the stored link to the exact active URL you verified in step 1** so the message sends the link that actually works:
+
+   ```sql
+   update brand_knowledge_nodes
+   set props = props || '{"live_url":"<verified active url>","link_active":true}'::jsonb
+   where brand_slug='opencraft' and type='studi_kasus' and label='<Project> — <one-liner>'
+     and props->>'live_url' is distinct from '<verified active url>';
+   ```
 3. **Load the showcase map into context.** Read back the current case studies + their markets so Steps 4–5 can match a lead to a project:
 
    ```sql
-   select n.label, n.props->>'live_url' as live_url, n.props->>'segment' as segment,
+   select n.label, n.props->>'live_url' as live_url,
+          n.props->>'link_active' as link_active, n.props->>'segment' as segment,
           n.description
    from brand_knowledge_nodes n
    where n.brand_slug='opencraft' and n.type='studi_kasus'
    order by n.label;
    ```
 
-   Keep this `segment → showcase project` table in mind — it is the lookup the cold message uses.
+   Keep this `segment → showcase project → active live link` table in mind — it is the lookup the cold message uses, and **the `live_url` is the exact link you will paste into each message** (only send links where `link_active` is true).
 
 > The same graph is browsable in the dashboard's **Knowledge Graph** view and via the `brand-knowledge` MCP (`search_nodes`, `get_graph`, `upsert_node`, `add_edge`) — using raw SQL here keeps the skill self-contained, but the MCP tools are an equivalent way to read/curate it.
 
@@ -127,7 +138,7 @@ This is where the showcase comes in. For each `valid` lead:
    | `kecantikan` (skincare / beauty D2C) | **VERDA** — verda.id | Landing page premium: hero sinematik, storytelling, koleksi produk, store locator |
    | *(other segments)* | nearest case study, else a relevant `layanan` | Fall back to the closest showcase project; if none fits, pitch the most relevant service node |
 
-   Use the live showcase URL as concrete proof ("kami sudah bikin yang serupa: kiyoo.id"). If **no** showcase project fits the segment, fall back to the gap you found on the lead's site (no website, parked domain, no booking system) and the matching OpenCraft `layanan` — don't force an irrelevant project.
+   Note the matched project's **active live link** (`live_url` from Step 0, the one with `link_active=true`) — this is the link the message will send as concrete proof ("lihat langsung contohnya: <live link>"). If **no** showcase project fits the segment, fall back to the gap you found on the lead's site (no website, parked domain, no booking system) and the matching OpenCraft `layanan` — don't force an irrelevant project, and send no project link.
 
 2. **Write a short, concrete `marketing_angle`** — one line, anchored to the matched project + the gap you saw. Examples:
 
@@ -145,18 +156,28 @@ For each `valid` lead, draft `outreach_message` in **Bahasa Indonesia**, persona
 
 - Warm, professional, **not** spammy. Use natural Indonesian (sapaan "Halo Tim <Nama Bisnis>," or "Selamat siang,").
 - 1 short paragraph + 1 clear call-to-action. Mention something specific you noticed about *this* business (the angle) so it doesn't read like a mass blast.
-- **Lead the pitch with the matched showcase project** as proof: name it and drop its live URL (e.g. "kami baru bikin **Kiyoo** (kiyoo.id) untuk brand merch K-pop", or "kami bikin **VERDA** (verda.id) untuk brand skincare"). Connect what that project does to the lead's situation. If no showcase project matched, pitch the relevant OpenCraft service instead and skip the project name — never invent a project or URL.
+- **Send the matched showcase project's active live link.** Name the project and **paste its full active link as a clickable URL on its own line** so the prospect can open it immediately — this is the change: don't just mention the brand in passing, give them the link to click. Put it on a dedicated line, e.g.:
+
+  ```
+  Lihat langsung contohnya di sini:
+  https://www.kiyoo.id/
+  ```
+
+  Use the exact `live_url` (with `link_active=true`) loaded in Step 0 — full `https://…`, no markdown link syntax, no shortening (this text gets pasted raw into WhatsApp/email/DM, so a bare URL is what becomes clickable). Connect what that project does to the lead's situation right before the link. If **no** showcase project matched, pitch the relevant OpenCraft service instead and send **no** link — never invent a project or paste a link that wasn't confirmed active in Step 0.
 - End with a soft CTA (ask permission to share a quick proposal / portfolio, or a 15-minute call).
-- No fake claims, no fabricated stats, no fake URLs. Only cite showcase URLs that came back from Step 0. Sign off generically as the OpenCraft team.
+- No fake claims, no fabricated stats, no fake URLs. Only send showcase links confirmed active in Step 0. Sign off generically as the OpenCraft team.
 
 Template to adapt (do **not** send verbatim for every lead — personalise the bolded bits; swap the showcase project to whichever matched the lead's market):
 
 ```
 Halo Tim **<Business Name>**,
 
-Saya dari OpenCraft. Saya lihat **<observasi spesifik — mis. "pre-order album & photocard-nya masih lewat DM dan spreadsheet">**, dan ini mirip banget sama yang kami kerjain bareng **<Showcase Project — mis. "Kiyoo (kiyoo.id)">** — **<apa yang project itu selesaikan — mis. "website pre-order: pembeli pilih varian, bayar DP, ordernya langsung masuk WhatsApp admin, tanpa fee marketplace">**.
+Saya dari OpenCraft. Saya lihat **<observasi spesifik — mis. "pre-order album & photocard-nya masih lewat DM dan spreadsheet">**, dan ini mirip banget sama yang kami kerjain bareng **<Showcase Project — mis. "Kiyoo">** — **<apa yang project itu selesaikan — mis. "website pre-order: pembeli pilih varian, bayar DP, ordernya langsung masuk WhatsApp admin, tanpa fee marketplace">**.
 
-Kami rasa **<Business Name>** bisa dapet manfaat serupa untuk **<angle ringkas>**. Boleh saya kirimkan contoh & proposal singkatnya? Tidak ada kewajiban apa pun.
+Boleh dilihat langsung contohnya di sini:
+<active live link — mis. https://www.kiyoo.id/>
+
+Kami rasa **<Business Name>** bisa dapet manfaat serupa untuk **<angle ringkas>**. Boleh saya kirimkan proposal singkatnya? Tidak ada kewajiban apa pun.
 
 Terima kasih,
 Tim OpenCraft
@@ -167,9 +188,12 @@ Example — a `korean-market` lead (K-pop merch store) gets pitched **Kiyoo**:
 ```
 Halo Tim **K-Pop Corner**,
 
-Saya dari OpenCraft. Saya lihat pre-order album & merch-nya masih dikelola lewat DM Instagram dan spreadsheet, dan ini mirip banget sama yang kami kerjain bareng **Kiyoo (kiyoo.id)** — website pre-order di mana pembeli pilih produk & varian, bayar DP 90%, lalu ordernya otomatis masuk ke WhatsApp admin. Jadi rapi, kelacak, dan tanpa fee marketplace.
+Saya dari OpenCraft. Saya lihat pre-order album & merch-nya masih dikelola lewat DM Instagram dan spreadsheet, dan ini mirip banget sama yang kami kerjain bareng **Kiyoo** — website pre-order di mana pembeli pilih produk & varian, bayar DP 90%, lalu ordernya otomatis masuk ke WhatsApp admin. Jadi rapi, kelacak, dan tanpa fee marketplace.
 
-Kami rasa **K-Pop Corner** bisa dapet sistem serupa biar PO-nya nggak lagi manual. Boleh saya kirimkan contoh & proposal singkatnya? Tidak ada kewajiban apa pun.
+Boleh dilihat langsung contohnya di sini:
+https://www.kiyoo.id/
+
+Kami rasa **K-Pop Corner** bisa dapet sistem serupa biar PO-nya nggak lagi manual. Boleh saya kirimkan proposal singkatnya? Tidak ada kewajiban apa pun.
 
 Terima kasih,
 Tim OpenCraft
@@ -207,7 +231,7 @@ Tell the user:
 - How many leads were validated this run, broken down by status (`valid` / `invalid` / `needs_review`).
 - **Which showcase project each `valid` lead was matched to** (e.g. "3 → Kiyoo, 2 → VERDA, 1 → generic service") so the showcase-driven targeting is visible.
 - That the results are written back to `scraper_leads` and visible in the dashboard's **Scrapers** menu (now with status, marketing angle, and a ready Indonesian message per lead), and that the graph is visible in the **Knowledge Graph** view.
-- A small sample table (first 3 `valid` leads): business name, matched showcase project, marketing_angle, and the first line of the outreach message.
+- A small sample table (first 3 `valid` leads): business name, matched showcase project, **the active live link the message sends**, and marketing_angle.
 - How many pending leads remain (so they can run `/validate` again to continue).
 
 ## Caveats
