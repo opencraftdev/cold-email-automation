@@ -1,0 +1,18 @@
+# Secrets / local env
+.env
+.env.local
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Scraper output / artifacts
+scrappers/google-maps-scraper/output/
+scrappers/**/leads_raw.json
+scrappers/**/leads.json
+scrappers/**/leads.csv
+webdata/
