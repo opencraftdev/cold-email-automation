@@ -3,6 +3,12 @@
 .env.local
 *.env
 !.env.example
+# Local backups of env files (may contain old/corrupted secrets) — never commit
+*.bak
+
+# Pipeline run logs (contain scraped business data)
+nightly.log
+*.log
 
 # Python
 __pycache__/
