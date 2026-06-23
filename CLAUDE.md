@@ -49,3 +49,17 @@ echo "dentist in Berlin" > queries.txt
 - Uses **headless Chromium via Playwright**. This host is **Ubuntu 26.04**, unsupported by Playwright — you MUST export `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` before running, or it refuses to download the browser. The 24.04 fallback build works. Browser is cached at `~/.cache/ms-playwright/` after first download; system libs (libnss3/libatk/libgbm/…) are already installed.
 - A `/scrape` skill (`.claude/skills/scrape/`) wraps all of this — e.g. `/scrape 100 restaurants in Berlin`.
 - Scraping Google Maps is against Google's ToS; scraped emails are cold contacts — respect GDPR/CAN-SPAM when using output for outreach.
+
+## Lead validation: `/validate` skill (`.claude/skills/validate/`)
+
+Second-stage skill that turns raw scraped rows into outreach-ready leads. The flow is **showcase-driven**:
+1. **Refresh brand knowledge first** — fetch OpenCraft's public showcase (`https://ocraft.id/en/showcase`) and upsert each project into the **brand knowledge graph** (Supabase `brand_knowledge_nodes` / `brand_knowledge_edges`, brand `opencraft`, in project `central-apps` / `wdzmuniyqqyngzckeoph`) as `studi_kasus` nodes linked to the `pasar` (market) they serve. Currently: **Kiyoo** (kiyoo.id → `korean-market`), **VERDA** (verda.id → `kecantikan`).
+2. Pull `pending` rows from `scraper_leads` and verify each business live with the **Claude-in-Chrome** extension (browser `PC Gaming Raka`), detecting the lead's market/segment.
+3. Match the lead's segment to a showcase project and write the cold message proposing it.
+
+Writes back per lead:
+- `validation_status` — `valid` / `invalid` / `needs_review`
+- `marketing_angle` — the **marketing field**: selling angle anchored to the matched showcase project
+- `outreach_message` — a ready-to-send cold message in **Bahasa Indonesia** that proposes the matched showcase project (e.g. Korean-market lead → Kiyoo, skincare brand → VERDA)
+
+These columns were added to `scraper_leads` by migration `add_validation_and_marketing_columns_to_scraper_leads`. Usage: `/validate`, `/validate kecantikan in Jakarta`, `/validate 25 otomotif`.
