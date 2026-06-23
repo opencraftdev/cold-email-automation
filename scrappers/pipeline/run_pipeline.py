@@ -33,6 +33,7 @@ Notes:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -69,34 +70,36 @@ SOCIAL_HOSTS = (
     "wa.me", "whatsapp.com", "youtube.com", "shopee.", "tokopedia.",
 )
 
-# Per-segment pitch text (short project name + one-line blurb). The actual live
-# link is read from the brand knowledge graph at runtime (source of truth), so
-# this only supplies the human copy. kesehatan has no showcase -> generic pitch.
+# Per-segment pitch text (short project name + one-line blurb, written the way a
+# real person would describe it — casual, concrete, anchored to real deliverables).
+# The actual live link is read from the brand knowledge graph at runtime (source of
+# truth). kesehatan has no showcase -> generic pitch.
 SEGMENT_PITCH = {
     "korean-market": (
         "Kiyoo",
-        "website pre-order di mana pelanggan pilih produk & varian, lalu ordernya "
-        "otomatis masuk ke WhatsApp admin",
+        "bikin website pre-order buat brand K-pop/Korea, jadi pembeli tinggal pilih "
+        "varian, bayar DP, dan ordernya otomatis masuk ke WhatsApp admin tanpa perlu "
+        "dicatat manual",
     ),
     "kecantikan": (
         "VERDA",
-        "landing page premium dengan hero sinematik, brand story, dan koleksi "
-        "produk buat bangun trust & konversi",
+        "bikin landing page skincare yang keliatan premium, lengkap sama brand story, "
+        "koleksi produk, sampai store locator biar calon pelanggan langsung percaya",
     ),
     "otomotif": (
-        "VELOCE Motors",
-        "landing page performa tinggi dengan galeri model, spesifikasi, dan "
-        "booking test-drive",
+        "VELOCE",
+        "bikin landing page otomotif yang enak dilihat, ada galeri model, spesifikasi, "
+        "sampai booking test-drive langsung dari web",
     ),
     "wisata": (
         "Nusantara",
-        "landing page wisata bergaya editorial dengan galeri destinasi yang bikin "
-        "orang pengen eksplor",
+        "bikin landing page wisata gaya editorial dengan galeri destinasi yang bikin "
+        "orang langsung pengen eksplor dan booking",
     ),
     "akomodasi": (
-        "Aruna Hotel & Resort",
-        "landing page hotel dengan daftar kamar + harga, fasilitas, galeri, dan "
-        "form booking",
+        "Aruna",
+        "bikin landing page hotel/resort yang komplit, mulai dari daftar kamar plus "
+        "harga, fasilitas, galeri, sampai form booking",
     ),
 }
 
@@ -112,6 +115,9 @@ class Config:
         self.brand_slug = os.getenv("BRAND_SLUG", "opencraft")
         self.scraper_bin = Path(os.getenv("SCRAPER_BIN", str(DEFAULT_BIN)))
         self.pw_override = os.getenv("PLAYWRIGHT_HOST_PLATFORM_OVERRIDE", "ubuntu24.04-x64")
+        # Optional first name of the human sending the outreach; makes copy feel
+        # personal ("Saya Raka dari OpenCraft"). Empty -> "Saya dari OpenCraft".
+        self.sender_name = (os.getenv("SENDER_NAME") or "").strip()
 
     def require_supabase(self) -> None:
         missing = [k for k, v in (
@@ -328,38 +334,105 @@ def reachable(url: str) -> bool:
         return False
 
 
-def build_message(name: str, project: dict | None, segment: str, wcls: str) -> str:
-    """Compose a Bahasa-Indonesia outreach message. Sends the project's active
-    link when a showcase project matches; otherwise pitches the service, no link."""
-    if wcls == "social":
-        obs = "kehadiran online-nya masih ngandelin sosial media / link-in-bio dan belum ada website sendiri"
+def _pick(seed: str, options: list[str]) -> str:
+    """Deterministically pick one option from a list, keyed on the business name.
+    Same business -> same choice (stable re-runs), but across a batch the openers,
+    CTAs and sign-offs vary so the messages don't read as one mass-produced template."""
+    if not options:
+        return ""
+    h = int(hashlib.sha1((seed or "x").encode("utf-8")).hexdigest(), 16)
+    return options[h % len(options)]
+
+
+def _clean_name(name: str) -> str:
+    """Trim long suffixes so the greeting feels like a person typed it, not a CRM."""
+    n = (name or "").strip()
+    # Cut at common separators that produce SEO-stuffed listing titles.
+    for sep in (" | ", " - ", " – ", " — ", " ("):
+        if sep in n:
+            n = n.split(sep)[0].strip()
+            break
+    return n
+
+
+def build_message(name: str, project: dict | None, segment: str,
+                  situation: str, sender: str = "") -> str:
+    """Compose a warm, casual Bahasa-Indonesia outreach message.
+
+    situation is one of: "live" (already has a website -> upsell angle),
+    "social" (only social/link-in-bio), or "none" (no website). When a showcase
+    project matches the segment, the message anchors to it and includes its live
+    link; otherwise it's a generic (but still human) service pitch with no link.
+    """
+    nm = _clean_name(name)
+    seed = f"{nm}|{segment}|{situation}"
+    who = f"Saya {sender} dari OpenCraft" if sender else "Saya dari OpenCraft"
+
+    greeting = _pick(seed, [
+        f"Halo, {nm}! 👋",
+        f"Hai tim {nm},",
+        f"Selamat siang, {nm}.",
+    ])
+
+    if situation == "live":
+        notice = _pick(seed, [
+            f"kemarin saya sempat mampir ke website {nm}, dan keliatannya udah jalan rapi.",
+            f"saya lihat {nm} udah punya website sendiri, dan menurut saya itu nilai plus banget.",
+            f"website {nm} udah aktif ya, bagus, banyak bisnis sejenis malah belum sampai situ.",
+        ])
+    elif situation == "social":
+        notice = _pick(seed, [
+            f"saya nemu {nm} di Google Maps, dan keliatannya kehadiran online-nya masih lewat sosmed atau link-in-bio aja, belum ada website sendiri.",
+            f"pas lihat {nm}, aktivitasnya rame di sosmed tapi belum ada website resmi buat nampung semuanya.",
+            f"saya cek {nm} di Google Maps, followers-nya jalan, cuma belum ada satu website yang jadi 'rumah' utamanya.",
+        ])
     else:  # none
-        obs = "belum punya website sendiri, jadi pemesanan & info masih tersebar manual"
+        notice = _pick(seed, [
+            f"saya nemu {nm} di Google Maps, tapi kayaknya belum ada website sendiri ya?",
+            f"pas cari-cari di Google Maps saya ketemu {nm}, dan sepertinya infonya masih kepisah-pisah, belum ada satu website yang nampung semua.",
+            f"saya lihat {nm} di Google Maps, menarik, tapi calon pelanggan agak susah nemu info lengkapnya karena belum ada website.",
+        ])
 
     if project and segment in SEGMENT_PITCH:
         short, blurb = SEGMENT_PITCH[segment]
-        return (
-            f"Halo Tim {name},\n\n"
-            f"Saya dari OpenCraft. Saya lihat {name} {obs}, dan ini mirip dengan yang "
-            f"kami kerjakan di {short} — {blurb}.\n\n"
-            f"Boleh dilihat langsung contohnya di sini:\n{project['live_url']}\n\n"
-            f"Kami rasa {name} bisa dapat manfaat serupa. Boleh saya kirimkan proposal "
-            f"singkatnya? Tidak ada kewajiban apa pun.\n\n"
-            f"Terima kasih,\nTim OpenCraft"
+        if situation == "live":
+            pitch = (
+                f"Kami di OpenCraft biasa bantu bisnis bikin website yang lebih nendang buat "
+                f"konversi sekaligus otomasi (misalnya order/CS-nya langsung jalan lewat WhatsApp). "
+                f"Salah satu yang pernah kami garap itu {short}, di sana kami {blurb}."
+            )
+        else:
+            pitch = f"Kebetulan ini mirip banget sama yang pernah kami kerjain buat {short}, di sana kami {blurb}."
+        example = f"Ini contoh live-nya, bisa langsung dibuka:\n{project['live_url']}"
+    else:
+        pitch = (
+            "Kami di OpenCraft bantu bisnis bikin website atau landing page sendiri yang nampilin "
+            "produk, lokasi, dan kontak dengan rapi, biar makin kredibel dan gampang ditemuin "
+            "calon pelanggan baru."
         )
-    # Generic service pitch (no matching showcase project -> no link).
-    return (
-        f"Halo Tim {name},\n\n"
-        f"Saya dari OpenCraft. Saya lihat {name} {obs}. Kami bantu bisnis bikin "
-        f"website / landing page sendiri yang menonjolkan produk, lokasi, dan kontak "
-        f"biar lebih kredibel dan gampang ditemukan calon pelanggan baru.\n\n"
-        f"Kami rasa {name} bisa dapat manfaat dari website seperti itu. Boleh saya "
-        f"kirimkan contoh & proposal singkatnya? Tidak ada kewajiban apa pun.\n\n"
-        f"Terima kasih,\nTim OpenCraft"
-    )
+        example = ""
+
+    cta = _pick(seed, [
+        "Kalau tertarik, saya bisa kirimin beberapa contoh plus estimasi kasarnya. Santai aja, nggak ada paksaan kok.",
+        "Kalau berkenan, boleh saya kirim gambaran ide plus perkiraan biayanya? Tanpa kewajiban apa pun.",
+        "Kalau mau ngobrol dulu soal idenya juga boleh, gratis kok, nggak harus lanjut.",
+    ])
+    closing = _pick(seed, [
+        "Makasih ya, semoga harinya lancar!",
+        "Terima kasih banyak, ditunggu kabarnya.",
+        "Makasih udah baca sampai sini 🙏",
+    ])
+    signoff = f"{sender}\nOpenCraft" if sender else "Salam,\nOpenCraft"
+
+    notice = notice[:1].upper() + notice[1:]
+    parts = [greeting, "", f"{who}. {notice}", "", pitch]
+    if example:
+        parts += ["", example]
+    parts += ["", cta, "", closing, "", signoff]
+    return "\n".join(parts)
 
 
-def validate_lead(lead: dict, showcase: dict) -> dict:
+def validate_lead(lead: dict, showcase: dict, sender: str = "") -> dict:
     """Decide status + notes + angle + message for one inserted lead row."""
     name = lead["business_name"]
     segment = lead["category"]
@@ -386,20 +459,14 @@ def validate_lead(lead: dict, showcase: dict) -> dict:
         return base
     if wcls == "live":
         base["validation_status"] = "valid"
-        base["validation_notes"] = "website aktif/online — peluang upsell (otomasi/landing baru)"
-        base["marketing_angle"] = f"{segment} — sudah punya website aktif; upsell perbaikan/otomasi (layanan OpenCraft)"
-        base["outreach_message"] = (
-            f"Halo Tim {name},\n\n"
-            f"Saya dari OpenCraft. Saya lihat {name} sudah punya website yang aktif. "
-            f"Kami bantu bisnis bikin website lebih konversi + otomasi (mis. order/CS "
-            f"via WhatsApp). Boleh saya kirimkan contoh & proposal singkatnya? "
-            f"Tidak ada kewajiban apa pun.\n\nTerima kasih,\nTim OpenCraft"
-        )
+        base["validation_notes"] = "website aktif/online, peluang upsell (otomasi/landing baru)"
+        base["marketing_angle"] = f"{segment}: sudah punya website aktif; upsell perbaikan/otomasi (layanan OpenCraft)"
+        base["outreach_message"] = build_message(name, project, segment, "live", sender)
         return base
     if wcls in ("social", "none"):
         if wcls == "none" and not has_contact:
             base["validation_status"] = "needs_review"
-            base["validation_notes"] = "tanpa website & info kontak minim — perlu cek manual"
+            base["validation_notes"] = "tanpa website & info kontak minim, perlu cek manual"
             return base
         base["validation_status"] = "valid"
         gap = "aktif di sosmed, belum ada website" if wcls == "social" else "tanpa website (listing aktif)"
@@ -407,11 +474,11 @@ def validate_lead(lead: dict, showcase: dict) -> dict:
         if project and segment in SEGMENT_PITCH:
             short, _ = SEGMENT_PITCH[segment]
             base["marketing_angle"] = (
-                f"{segment} — {gap}; tawarkan website ala {short} ({project['live_url']})"
+                f"{segment}: {gap}; tawarkan website ala {short} ({project['live_url']})"
             )
         else:
-            base["marketing_angle"] = f"{segment} — {gap}; tawarkan website/landing page (layanan OpenCraft)"
-        base["outreach_message"] = build_message(name, project, segment, wcls)
+            base["marketing_angle"] = f"{segment}: {gap}; tawarkan website/landing page (layanan OpenCraft)"
+        base["outreach_message"] = build_message(name, project, segment, wcls, sender)
         return base
 
     return base
@@ -425,7 +492,7 @@ def notify_discord(cfg: Config, summary: dict) -> None:
         return
     counts = summary["counts"]
     fields = [
-        {"name": "Queries", "value": "\n".join(f"• {q}" for q in summary["queries"])[:1024] or "—", "inline": False},
+        {"name": "Queries", "value": "\n".join(f"• {q}" for q in summary["queries"])[:1024] or "-", "inline": False},
         {"name": "Category", "value": summary["category"], "inline": True},
         {"name": "Scraped", "value": str(summary["scraped"]), "inline": True},
         {"name": "New inserted", "value": str(summary["inserted"]), "inline": True},
@@ -437,7 +504,7 @@ def notify_discord(cfg: Config, summary: dict) -> None:
     ]
     embed = {
         "title": "Scrape + Validate selesai",
-        "description": f"Pipeline cold-email OpenCraft — {summary['category']} @ {summary['location'] or '—'}",
+        "description": f"Pipeline cold-email OpenCraft: {summary['category']} @ {summary['location'] or '-'}",
         "color": 0x2ECC71 if summary["inserted"] else 0xF1C40F,
         "fields": fields,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -469,6 +536,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--skip-scrape", action="store_true",
                    help="Skip scraping; just validate existing pending leads")
     p.add_argument("--no-validate", action="store_true", help="Ingest only; do not validate")
+    p.add_argument("--no-notify", action="store_true",
+                   help="Skip the Discord post (run_nightly.sh sends one rollup at the end instead)")
+    p.add_argument("--summary-out", default="",
+                   help="Write this run's summary as JSON to this path (consumed by notify_rollup.py)")
     return p.parse_args(argv)
 
 
@@ -522,7 +593,7 @@ def main(argv: list[str]) -> int:
         log(f"Validating {len(targets)} lead(s) against {len(showcase)} showcase segment(s) ...")
         updates = []
         for lead in targets:
-            res = validate_lead(lead, showcase)
+            res = validate_lead(lead, showcase, cfg.sender_name)
             updates.append(res)
             counts[res["validation_status"]] = counts.get(res["validation_status"], 0) + 1
             if res.get("outreach_message") and "https://" in (res["outreach_message"] or ""):
@@ -543,7 +614,18 @@ def main(argv: list[str]) -> int:
         "with_link": with_link,
         "counts": counts,
     }
-    notify_discord(cfg, summary)
+    if args.summary_out:
+        try:
+            Path(args.summary_out).write_text(
+                json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+            log(f"Summary written to {args.summary_out}")
+        except OSError as e:
+            log(f"Could not write summary to {args.summary_out}: {e}")
+
+    if args.no_notify:
+        log("Skipping Discord (--no-notify).")
+    else:
+        notify_discord(cfg, summary)
     log("Done.")
     return 0
 
